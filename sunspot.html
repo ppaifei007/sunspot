@@ -5,6 +5,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 引入Chart.js注释插件用于绘制周期线 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     
     <!-- Tailwind 配置 -->
     <script>
@@ -14,6 +17,7 @@
                     colors: {
                         primary: '#165DFF',
                         secondary: '#FF7D00',
+                        cycle: '#E53E3E', // 周期线颜色
                         dark: '#1E293B',
                         light: '#F8FAFC'
                     },
@@ -58,7 +62,7 @@
                     </button>
                 </div>
             </div>
-            <p class="mt-2 text-white/80">2018年至今的太阳黑子数量统计与趋势分析</p>
+            <p class="mt-2 text-white/80">2018年至今的太阳黑子数量统计与趋势分析 | 11年活动周期标记</p>
         </div>
     </header>
 
@@ -103,12 +107,28 @@
             </div>
         </div>
         
+        <!-- 图表说明 -->
+        <div class="bg-white rounded-xl shadow-soft p-4 mb-6 flex flex-wrap items-center">
+            <div class="flex items-center mr-6 mb-2 md:mb-0">
+                <div class="w-4 h-4 bg-primary rounded-sm mr-2"></div>
+                <span class="text-sm text-gray-600">太阳黑子数量</span>
+            </div>
+            <div class="flex items-center mr-6 mb-2 md:mb-0">
+                <div class="w-4 h-0.5 bg-cycle mr-2"></div>
+                <span class="text-sm text-gray-600">太阳活动周期起点 (每11年)</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="fa fa-info-circle text-primary mr-1"></i>
+                太阳活动周期从1755年3月开始计算，平均周期约为11年
+            </div>
+        </div>
+        
         <!-- 图表区域 -->
         <div class="bg-white rounded-xl shadow-soft p-6 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-bold mb-2">太阳黑子数量趋势 (2018年至今)</h2>
-                    <p class="text-gray-500">每日太阳黑子数量变化折线图</p>
+                    <p class="text-gray-500">每日太阳黑子数量变化折线图，含11年周期标记</p>
                 </div>
                 <div class="mt-4 md:mt-0 flex space-x-2">
                     <button class="time-filter-btn active px-4 py-2 rounded-lg border border-primary text-primary bg-primary/10 hover:bg-primary/20 transition-all" data-interval="monthly">月视图</button>
@@ -122,17 +142,17 @@
             </div>
         </div>
         
-        <!-- 关于太阳黑子 -->
+        <!-- 关于太阳黑子周期 -->
         <div class="bg-white rounded-xl shadow-soft p-6">
-            <h2 class="text-2xl font-bold mb-4">关于太阳黑子</h2>
+            <h2 class="text-2xl font-bold mb-4">太阳黑子与11年周期</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="col-span-2">
-                    <p class="text-gray-700 mb-4">太阳黑子是太阳表面上的暗斑，温度比周围区域低，由太阳磁场活动引起。太阳黑子的数量和分布是太阳活动的重要指标，具有大约11年的周期性变化。</p>
-                    <p class="text-gray-700 mb-4">监测太阳黑子活动对于理解空间天气、预测地磁暴以及保护卫星和地面电子设备具有重要意义。</p>
-                    <p class="text-gray-700">本网站展示了2018年以来的太阳黑子数量变化趋势，数据每日更新。</p>
+                    <p class="text-gray-700 mb-4">太阳黑子活动呈现出约11年的周期性变化，称为太阳活动周期。这个周期从太阳活动极小期开始，逐渐增加到极大期，然后再减少到下一个极小期。</p>
+                    <p class="text-gray-700 mb-4">第一个被确认的太阳活动周期（第1周期）始于1755年3月，我们目前处于第25个太阳活动周期中，该周期始于2019年12月的极小期。</p>
+                    <p class="text-gray-700">太阳活动周期对地球有显著影响，包括地磁活动、极光现象、无线电通信干扰以及空间天气变化等。</p>
                 </div>
                 <div class="bg-gray-100 rounded-lg overflow-hidden">
-                    <img src="https://picsum.photos/id/1015/600/400" alt="太阳表面的黑子照片" class="w-full h-full object-cover">
+                    <img src="https://picsum.photos/id/1019/600/400" alt="太阳表面的黑子照片，展示太阳活动" class="w-full h-full object-cover">
                 </div>
             </div>
         </div>
@@ -168,6 +188,10 @@
         let sunspotData = [];
         let sunspotChart = null;
         let currentInterval = 'monthly';
+        // 太阳活动周期起始点（从1755年3月开始，每11年一个周期）
+        const cycleStartYear = 1755;
+        const cycleStartMonth = 2; // JavaScript月份从0开始，3月是2
+        const cycleLength = 11; // 11年周期
         
         // 初始化页面
         document.addEventListener('DOMContentLoaded', () => {
@@ -193,8 +217,9 @@
             const endDate = new Date(); // 当前日期
             const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
             
-            // 太阳黑子活动大约有11年周期，这里模拟这个周期
-            const cycleLength = 11 * 365; // 11年的天数
+            // 计算当前处于第几个太阳活动周期
+            const currentYear = endDate.getFullYear();
+            const cycleNumber = Math.floor((currentYear - cycleStartYear) / cycleLength) + 1;
             
             sunspotData = [];
             
@@ -202,11 +227,16 @@
                 const date = new Date(startDate);
                 date.setDate(startDate.getDate() + i);
                 
-                // 计算在11年周期中的位置（0到1之间）
-                const cyclePosition = (i % cycleLength) / cycleLength;
+                // 计算在当前11年周期中的位置（0到1之间）
+                // 找到当前日期所在周期的起始年份
+                const year = date.getFullYear();
+                const cycleStart = cycleStartYear + (Math.floor((year - cycleStartYear) / cycleLength) * cycleLength);
+                const yearsIntoCycle = (year - cycleStart) + (date.getMonth() / 12);
+                const cyclePosition = yearsIntoCycle / cycleLength;
                 
                 // 使用正弦函数模拟周期，添加一些随机波动
-                let baseCount = Math.sin(cyclePosition * Math.PI * 2) * 50 + 50;
+                // 太阳活动周期在极大期达到峰值，极小期达到谷值
+                let baseCount = Math.sin(cyclePosition * Math.PI) * 80 + 20;
                 baseCount = Math.max(0, baseCount); // 确保不为负数
                 
                 // 添加随机波动
@@ -220,12 +250,70 @@
             }
         }
         
+        // 计算所有太阳活动周期起始点（从1755年3月开始，每11年）
+        function getSolarCycleStarts() {
+            const cycles = [];
+            const firstCycle = new Date(cycleStartYear, cycleStartMonth, 1); // 1755年3月1日
+            
+            // 计算到当前日期为止的所有周期起始点
+            let currentCycle = new Date(firstCycle);
+            const today = new Date();
+            
+            while (currentCycle <= today) {
+                cycles.push(new Date(currentCycle));
+                currentCycle.setFullYear(currentCycle.getFullYear() + cycleLength);
+            }
+            
+            return cycles;
+        }
+        
         // 初始化图表
         function initChart() {
             const ctx = document.getElementById('sunspotChart').getContext('2d');
             
             // 根据当前时间间隔筛选数据
             const filteredData = filterDataByInterval(currentInterval);
+            
+            // 获取所有太阳活动周期起始点
+            const cycleStarts = getSolarCycleStarts();
+            
+            // 准备周期线注释配置
+            const annotations = {};
+            cycleStarts.forEach((cycleDate, index) => {
+                // 只添加在我们数据范围内的周期线
+                const firstDataDate = new Date(filteredData[0].date);
+                const lastDataDate = new Date(filteredData[filteredData.length - 1].date);
+                
+                if (cycleDate >= firstDataDate && cycleDate <= lastDataDate) {
+                    const cycleNumber = index + 1;
+                    annotations[`cycle${cycleNumber}`] = {
+                        type: 'line',
+                        xMin: cycleDate,
+                        xMax: cycleDate,
+                        borderColor: '#E53E3E',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        borderDashOffset: 0,
+                        label: {
+                            display: true,
+                            content: `第${cycleNumber}周期`,
+                            position: 'start',
+                            backgroundColor: '#E53E3E',
+                            color: 'white',
+                            font: {
+                                size: 10
+                            },
+                            padding: {
+                                top: 5,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            },
+                            cornerRadius: 3
+                        }
+                    };
+                }
+            });
             
             sunspotChart = new Chart(ctx, {
                 type: 'line',
@@ -274,10 +362,24 @@
                                     return `太阳黑子数量: ${context.raw}`;
                                 }
                             }
+                        },
+                        // 添加注释插件配置（周期线）
+                        annotation: {
+                            annotations: annotations
                         }
                     },
                     scales: {
                         x: {
+                            type: 'time',
+                            time: {
+                                unit: currentInterval === 'monthly' ? 'day' : 
+                                      currentInterval === 'yearly' ? 'month' : 'year',
+                                displayFormats: {
+                                    day: 'MM-dd',
+                                    month: 'yyyy-MM',
+                                    year: 'yyyy'
+                                }
+                            },
                             grid: {
                                 display: false
                             },
@@ -391,10 +493,13 @@
         
         // 更新图表数据
         function updateChart() {
-            const filteredData = filterDataByInterval(currentInterval);
-            sunspotChart.data.labels = filteredData.map(item => item.date);
-            sunspotChart.data.datasets[0].data = filteredData.map(item => item.count);
-            sunspotChart.update();
+            // 销毁现有图表
+            if (sunspotChart) {
+                sunspotChart.destroy();
+            }
+            
+            // 创建新图表
+            initChart();
         }
         
         // 添加新的每日数据（模拟更新）
