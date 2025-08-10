@@ -1,0 +1,503 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳黑子数量追踪 | 2018年至今</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .shadow-soft {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #165DFF 0%, #0A2463 100%);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark">
+    <!-- 导航栏 -->
+    <header class="gradient-bg text-white shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <i class="fa fa-sun-o text-3xl mr-3 text-yellow-300"></i>
+                    <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold">太阳黑子数量追踪</h1>
+                </div>
+                <div class="flex items-center">
+                    <span id="last-update" class="hidden md:inline-block bg-white/20 px-3 py-1 rounded-full text-sm mr-4">
+                        最后更新: 加载中...
+                    </span>
+                    <button id="update-btn" class="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center">
+                        <i class="fa fa-refresh mr-2"></i>
+                        <span>更新数据</span>
+                    </button>
+                </div>
+            </div>
+            <p class="mt-2 text-white/80">2018年至今的太阳黑子数量统计与趋势分析</p>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 数据摘要卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-soft p-6 transform hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">总记录数</h3>
+                    <i class="fa fa-database text-primary text-xl"></i>
+                </div>
+                <p id="total-records" class="text-3xl font-bold">0</p>
+                <p class="text-gray-400 text-sm mt-2">从2018年开始</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-soft p-6 transform hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">平均数量</h3>
+                    <i class="fa fa-line-chart text-primary text-xl"></i>
+                </div>
+                <p id="average-sunspots" class="text-3xl font-bold">0</p>
+                <p class="text-gray-400 text-sm mt-2">所有记录的平均值</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-soft p-6 transform hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">最高数量</h3>
+                    <i class="fa fa-arrow-up text-red-500 text-xl"></i>
+                </div>
+                <p id="max-sunspots" class="text-3xl font-bold">0</p>
+                <p id="max-date" class="text-gray-400 text-sm mt-2">记录日期</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-soft p-6 transform hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">今日数量</h3>
+                    <i class="fa fa-calendar text-secondary text-xl"></i>
+                </div>
+                <p id="today-sunspots" class="text-3xl font-bold">0</p>
+                <p id="today-date" class="text-gray-400 text-sm mt-2">当前日期</p>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="bg-white rounded-xl shadow-soft p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">太阳黑子数量趋势 (2018年至今)</h2>
+                    <p class="text-gray-500">每日太阳黑子数量变化折线图</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-2">
+                    <button class="time-filter-btn active px-4 py-2 rounded-lg border border-primary text-primary bg-primary/10 hover:bg-primary/20 transition-all" data-interval="monthly">月视图</button>
+                    <button class="time-filter-btn px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all" data-interval="yearly">年视图</button>
+                    <button class="time-filter-btn px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all" data-interval="all">完整视图</button>
+                </div>
+            </div>
+            
+            <div class="h-[500px] w-full">
+                <canvas id="sunspotChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 关于太阳黑子 -->
+        <div class="bg-white rounded-xl shadow-soft p-6">
+            <h2 class="text-2xl font-bold mb-4">关于太阳黑子</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-2">
+                    <p class="text-gray-700 mb-4">太阳黑子是太阳表面上的暗斑，温度比周围区域低，由太阳磁场活动引起。太阳黑子的数量和分布是太阳活动的重要指标，具有大约11年的周期性变化。</p>
+                    <p class="text-gray-700 mb-4">监测太阳黑子活动对于理解空间天气、预测地磁暴以及保护卫星和地面电子设备具有重要意义。</p>
+                    <p class="text-gray-700">本网站展示了2018年以来的太阳黑子数量变化趋势，数据每日更新。</p>
+                </div>
+                <div class="bg-gray-100 rounded-lg overflow-hidden">
+                    <img src="https://picsum.photos/id/1015/600/400" alt="太阳表面的黑子照片" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white/80 mt-12 py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p>© 2023 太阳黑子数量追踪系统</p>
+                    <p class="text-sm mt-1">数据仅供参考，如需精确数据请查阅专业天文观测资料</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-white transition-colors"><i class="fa fa-github text-xl"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fa fa-twitter text-xl"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fa fa-envelope text-xl"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 加载动画 -->
+    <div id="loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-lg flex items-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mr-4"></div>
+            <p>正在更新数据...</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let sunspotData = [];
+        let sunspotChart = null;
+        let currentInterval = 'monthly';
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', () => {
+            // 生成模拟数据
+            generateMockData();
+            
+            // 初始化图表
+            initChart();
+            
+            // 更新统计信息
+            updateStatistics();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 更新最后更新时间
+            updateLastUpdateTime();
+        });
+        
+        // 生成2018年至今的模拟太阳黑子数据
+        function generateMockData() {
+            const startDate = new Date(2018, 0, 1); // 2018年1月1日
+            const endDate = new Date(); // 当前日期
+            const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+            
+            // 太阳黑子活动大约有11年周期，这里模拟这个周期
+            const cycleLength = 11 * 365; // 11年的天数
+            
+            sunspotData = [];
+            
+            for (let i = 0; i <= days; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                // 计算在11年周期中的位置（0到1之间）
+                const cyclePosition = (i % cycleLength) / cycleLength;
+                
+                // 使用正弦函数模拟周期，添加一些随机波动
+                let baseCount = Math.sin(cyclePosition * Math.PI * 2) * 50 + 50;
+                baseCount = Math.max(0, baseCount); // 确保不为负数
+                
+                // 添加随机波动
+                const randomFluctuation = (Math.random() - 0.5) * 20;
+                const sunspotCount = Math.round(baseCount + randomFluctuation);
+                
+                sunspotData.push({
+                    date: date.toISOString().split('T')[0], // 格式化为YYYY-MM-DD
+                    count: sunspotCount
+                });
+            }
+        }
+        
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('sunspotChart').getContext('2d');
+            
+            // 根据当前时间间隔筛选数据
+            const filteredData = filterDataByInterval(currentInterval);
+            
+            sunspotChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: filteredData.map(item => item.date),
+                    datasets: [{
+                        label: '太阳黑子数量',
+                        data: filteredData.map(item => item.count),
+                        borderColor: '#165DFF',
+                        backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#165DFF',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            displayColors: false,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return formatDate(tooltipItems[0].label);
+                                },
+                                label: function(context) {
+                                    return `太阳黑子数量: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+        
+        // 根据时间间隔筛选数据
+        function filterDataByInterval(interval) {
+            if (interval === 'all') {
+                return [...sunspotData];
+            }
+            
+            const now = new Date();
+            let filtered = [];
+            
+            if (interval === 'monthly') {
+                // 只显示最近30天的数据
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(now.getDate() - 30);
+                
+                filtered = sunspotData.filter(item => {
+                    const itemDate = new Date(item.date);
+                    return itemDate >= thirtyDaysAgo;
+                });
+            } else if (interval === 'yearly') {
+                // 只显示最近一年的数据，按月聚合
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(now.getFullYear() - 1);
+                
+                // 先筛选出最近一年的数据
+                const recentData = sunspotData.filter(item => {
+                    const itemDate = new Date(item.date);
+                    return itemDate >= oneYearAgo;
+                });
+                
+                // 按月聚合，计算每月平均值
+                const monthlyData = {};
+                
+                recentData.forEach(item => {
+                    const date = new Date(item.date);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = {
+                            total: 0,
+                            count: 0,
+                            date: `${monthKey}-01` // 每月第一天作为标签
+                        };
+                    }
+                    
+                    monthlyData[monthKey].total += item.count;
+                    monthlyData[monthKey].count++;
+                });
+                
+                // 转换为数组并计算平均值
+                filtered = Object.values(monthlyData).map(month => ({
+                    date: month.date,
+                    count: Math.round(month.total / month.count)
+                }));
+            }
+            
+            return filtered;
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            if (sunspotData.length === 0) return;
+            
+            // 总记录数
+            document.getElementById('total-records').textContent = sunspotData.length;
+            
+            // 计算平均值
+            const total = sunspotData.reduce((sum, item) => sum + item.count, 0);
+            const average = Math.round(total / sunspotData.length);
+            document.getElementById('average-sunspots').textContent = average;
+            
+            // 找到最大值及日期
+            const maxItem = sunspotData.reduce((max, item) => 
+                item.count > max.count ? item : max, sunspotData[0]);
+            document.getElementById('max-sunspots').textContent = maxItem.count;
+            document.getElementById('max-date').textContent = formatDate(maxItem.date);
+            
+            // 今日数据
+            const today = sunspotData[sunspotData.length - 1];
+            document.getElementById('today-sunspots').textContent = today.count;
+            document.getElementById('today-date').textContent = formatDate(today.date);
+        }
+        
+        // 更新图表数据
+        function updateChart() {
+            const filteredData = filterDataByInterval(currentInterval);
+            sunspotChart.data.labels = filteredData.map(item => item.date);
+            sunspotChart.data.datasets[0].data = filteredData.map(item => item.count);
+            sunspotChart.update();
+        }
+        
+        // 添加新的每日数据（模拟更新）
+        function addNewDailyData() {
+            // 显示加载动画
+            document.getElementById('loading').classList.remove('hidden');
+            
+            // 模拟网络请求延迟
+            setTimeout(() => {
+                const lastDate = new Date(sunspotData[sunspotData.length - 1].date);
+                const newDate = new Date(lastDate);
+                newDate.setDate(lastDate.getDate() + 1);
+                
+                // 基于前一天的值添加一些随机波动
+                const lastCount = sunspotData[sunspotData.length - 1].count;
+                const fluctuation = Math.floor((Math.random() - 0.5) * 10);
+                const newCount = Math.max(0, lastCount + fluctuation);
+                
+                // 添加新数据
+                sunspotData.push({
+                    date: newDate.toISOString().split('T')[0],
+                    count: newCount
+                });
+                
+                // 更新图表和统计信息
+                updateChart();
+                updateStatistics();
+                updateLastUpdateTime();
+                
+                // 隐藏加载动画
+                document.getElementById('loading').classList.add('hidden');
+                
+                // 显示成功提示
+                showNotification('数据已成功更新！');
+            }, 1000);
+        }
+        
+        // 更新最后更新时间
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                `最后更新: ${now.toLocaleString()}`;
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            // 检查是否已存在通知元素
+            let notification = document.getElementById('notification');
+            
+            if (!notification) {
+                // 创建通知元素
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-40';
+                document.body.appendChild(notification);
+            }
+            
+            // 设置消息并显示
+            notification.textContent = message;
+            setTimeout(() => {
+                notification.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // 格式化日期显示
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 更新数据按钮
+            document.getElementById('update-btn').addEventListener('click', addNewDailyData);
+            
+            // 时间间隔筛选按钮
+            document.querySelectorAll('.time-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 更新活动状态
+                    document.querySelectorAll('.time-filter-btn').forEach(b => {
+                        b.classList.remove('active', 'border-primary', 'text-primary', 'bg-primary/10');
+                        b.classList.add('border-gray-200', 'text-gray-600');
+                    });
+                    
+                    btn.classList.add('active', 'border-primary', 'text-primary', 'bg-primary/10');
+                    btn.classList.remove('border-gray-200', 'text-gray-600');
+                    
+                    // 更新当前时间间隔并刷新图表
+                    currentInterval = btn.dataset.interval;
+                    updateChart();
+                });
+            });
+        }
+    </script>
+
+
+</body></html>
